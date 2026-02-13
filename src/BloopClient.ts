@@ -86,7 +86,7 @@ export class BloopRNClient {
   /** Shutdown the client, flushing remaining events. */
   async shutdown(): Promise<void> {
     this.uninstallGlobalHandler();
-    return this.client.shutdown();
+    return this.client.close();
   }
 }
 
