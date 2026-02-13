@@ -11,6 +11,10 @@
   "dependencies": {
     "bloop-sdk": "^0.2.0"
   },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
   "peerDependencies": {
     "react": ">=17.0.0",
     "react-native": ">=0.70.0"
