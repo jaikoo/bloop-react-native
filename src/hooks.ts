@@ -3,7 +3,8 @@ import { BloopRNClient, BloopRNConfig } from "./BloopClient";
 
 /**
  * React hook that creates and manages a BloopRNClient instance.
- * Installs the global error handler on mount and cleans up on unmount.
+ * Installs all handlers (global error, AppState, promise rejection) on mount
+ * and cleans up on unmount.
  *
  * @example
  * ```tsx
@@ -30,6 +31,8 @@ export function useBloop(config: BloopRNConfig): BloopRNClient {
   useEffect(() => {
     const client = clientRef.current!;
     client.installGlobalHandler();
+    client.installAppStateHandler();
+    client.installPromiseRejectionHandler();
 
     return () => {
       client.shutdown();
