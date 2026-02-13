@@ -1,4 +1,4 @@
-import { BloopClient as BaseBloopClient, BloopConfig, ErrorEvent } from "@bloop/sdk";
+import { BloopClient as BaseBloopClient, BloopConfig, ErrorEvent } from "bloop-sdk";
 import { Platform } from "react-native";
 
 export interface BloopRNConfig extends Omit<BloopConfig, "source"> {
