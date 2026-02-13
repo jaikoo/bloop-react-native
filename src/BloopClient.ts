@@ -1,5 +1,5 @@
 import { BloopClient as BaseBloopClient, BloopConfig, ErrorEvent } from "bloop-sdk";
-import { Platform } from "react-native";
+import { AppState, AppStateStatus, Platform } from "react-native";
 
 export interface BloopRNConfig extends Omit<BloopConfig, "source"> {
   /** Override source detection. Defaults to platform-based detection. */
@@ -16,6 +16,8 @@ export class BloopRNClient {
   private buildNumber?: string;
   private originalHandler: ((error: Error, isFatal?: boolean) => void) | null =
     null;
+  private appStateSubscription: { remove(): void } | null = null;
+  private originalPromiseRejectionHandler: ((id: string, error: Error) => void) | null = null;
 
   constructor(config: BloopRNConfig) {
     const source =
@@ -78,6 +80,44 @@ export class BloopRNClient {
     }
   }
 
+  /**
+   * Listen to AppState changes and flush when the app moves to background or inactive.
+   * Critical on iOS where backgrounded apps are killed without notice.
+   */
+  installAppStateHandler(): void {
+    this.appStateSubscription = AppState.addEventListener(
+      "change",
+      (nextState: AppStateStatus) => {
+        if (nextState === "background" || nextState === "inactive") {
+          this.flush();
+        }
+      }
+    );
+  }
+
+  /**
+   * Hook global.onunhandledrejection for unhandled promise rejections.
+   * React Native does not have addEventListener for this — uses the global callback.
+   */
+  installPromiseRejectionHandler(): void {
+    const g = globalThis as any;
+    if (g.onunhandledrejection) {
+      this.originalPromiseRejectionHandler = g.onunhandledrejection;
+    }
+    g.onunhandledrejection = (event: any) => {
+      const reason = event?.reason;
+      const error =
+        reason instanceof Error ? reason : new Error(String(reason));
+      this.captureError(error, {
+        unhandled: true,
+        mechanism: "unhandledrejection",
+      });
+      if (this.originalPromiseRejectionHandler) {
+        this.originalPromiseRejectionHandler(event?.id, error);
+      }
+    };
+  }
+
   /** Flush buffered events immediately. */
   async flush(): Promise<void> {
     return this.client.flush();
@@ -86,6 +126,15 @@ export class BloopRNClient {
   /** Shutdown the client, flushing remaining events. */
   async shutdown(): Promise<void> {
     this.uninstallGlobalHandler();
+    this.appStateSubscription?.remove();
+    this.appStateSubscription = null;
+    const g = globalThis as any;
+    if (this.originalPromiseRejectionHandler) {
+      g.onunhandledrejection = this.originalPromiseRejectionHandler;
+      this.originalPromiseRejectionHandler = null;
+    } else {
+      delete g.onunhandledrejection;
+    }
     return this.client.close();
   }
 }
