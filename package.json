@@ -1,0 +1,24 @@
+{
+  "name": "@bloop/react-native",
+  "version": "0.1.0",
+  "description": "Bloop error tracking SDK for React Native",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "dependencies": {
+    "@bloop/sdk": "^0.2.0"
+  },
+  "peerDependencies": {
+    "react": ">=17.0.0",
+    "react-native": ">=0.70.0"
+  },
+  "files": ["dist/", "src/"],
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jaikoo/bloop-react-native"
+  }
+}
