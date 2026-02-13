@@ -1,5 +1,5 @@
 {
-  "name": "@bloop/react-native",
+  "name": "bloop-react-native",
   "version": "0.1.0",
   "description": "Bloop error tracking SDK for React Native",
   "main": "dist/index.js",
@@ -9,7 +9,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "@bloop/sdk": "^0.2.0"
+    "bloop-sdk": "^0.2.0"
   },
   "peerDependencies": {
     "react": ">=17.0.0",
