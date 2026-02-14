@@ -1,4 +1,18 @@
-import { BloopClient as BaseBloopClient, BloopConfig, ErrorEvent } from "bloop-sdk";
+import {
+  BloopClient as BaseBloopClient,
+  BloopConfig,
+  ErrorEvent,
+  Trace,
+  Span,
+  TraceOptions,
+  TraceGenerationOptions,
+  SpanOptions,
+  SpanEndOptions,
+  TraceEndOptions,
+  SpanType,
+  SpanStatus,
+  TraceStatus,
+} from "bloop-sdk";
 import { AppState, AppStateStatus, Platform } from "react-native";
 
 export interface BloopRNConfig extends Omit<BloopConfig, "source"> {
@@ -11,7 +25,7 @@ export interface BloopRNConfig extends Omit<BloopConfig, "source"> {
 }
 
 export class BloopRNClient {
-  private client: BaseBloopClient;
+  protected client: BaseBloopClient;
   private appVersion?: string;
   private buildNumber?: string;
   private originalHandler: ((error: Error, isFatal?: boolean) => void) | null =
@@ -116,6 +130,23 @@ export class BloopRNClient {
         this.originalPromiseRejectionHandler(event?.id, error);
       }
     };
+  }
+
+  /** Start a new LLM trace. Delegates to the underlying BloopClient. */
+  startTrace(opts: TraceOptions): Trace {
+    return this.client.startTrace(opts);
+  }
+
+  /**
+   * Convenience: trace a single LLM generation call.
+   * Creates a trace with a single generation span, executes the callback,
+   * and ends both span and trace automatically.
+   */
+  async traceGeneration<T>(
+    opts: TraceGenerationOptions,
+    fn: (span: Span) => Promise<T>
+  ): Promise<T> {
+    return this.client.traceGeneration(opts, fn);
   }
 
   /** Flush buffered events immediately. */

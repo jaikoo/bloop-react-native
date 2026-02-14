@@ -1,6 +1,6 @@
 {
   "name": "bloop-react-native",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Bloop error tracking SDK for React Native",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "bloop-sdk": "^0.2.0"
+    "bloop-sdk": "^0.3.0"
   },
   "devDependencies": {
     "@types/react": "^18.0.0",
