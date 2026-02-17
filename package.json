@@ -1,7 +1,7 @@
 {
   "name": "bloop-react-native",
-  "version": "0.2.0",
-  "description": "Bloop error tracking SDK for React Native",
+  "version": "0.3.0",
+  "description": "Bloop error tracking and LLM tracing SDK for React Native",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
@@ -9,7 +9,7 @@
     "prepublishOnly": "npm run build"
   },
   "dependencies": {
-    "bloop-sdk": "^0.3.0"
+    "@dthink/bloop-sdk": "^0.5.2"
   },
   "devDependencies": {
     "@types/react": "^18.0.0",
@@ -25,6 +25,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jaikoo/bloop-react-native"
+    "url": "git+https://github.com/jaikoo/bloop-react-native.git"
   }
 }

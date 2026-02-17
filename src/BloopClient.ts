@@ -1,31 +1,36 @@
 import {
-  BloopClient as BaseBloopClient,
-  BloopConfig,
-  ErrorEvent,
+  BloopClient,
   Trace,
   Span,
-  TraceOptions,
-  TraceGenerationOptions,
-  SpanOptions,
-  SpanEndOptions,
-  TraceEndOptions,
-  SpanType,
-  SpanStatus,
-  TraceStatus,
-} from "bloop-sdk";
+} from "@dthink/bloop-sdk";
+import type { BloopClientOptions } from "@dthink/bloop-sdk";
 import { AppState, AppStateStatus, Platform } from "react-native";
 
-export interface BloopRNConfig extends Omit<BloopConfig, "source"> {
+export interface BloopRNConfig extends Omit<BloopClientOptions, "flushInterval" | "maxBufferSize"> {
   /** Override source detection. Defaults to platform-based detection. */
   source?: "ios" | "android" | "api";
   /** App version string (e.g. "1.2.3"). */
   appVersion?: string;
   /** Build number (e.g. "42"). */
   buildNumber?: string;
+  /** Flush interval in ms. Default 5000. */
+  flushInterval?: number;
+  /** Max buffer size before auto-flush. Default 100. */
+  maxBufferSize?: number;
+}
+
+export interface ErrorEvent {
+  errorType: string;
+  message: string;
+  stack?: string;
+  routeOrProcedure?: string;
+  screen?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export class BloopRNClient {
-  protected client: BaseBloopClient;
+  protected client: BloopClient;
+  private source: string;
   private appVersion?: string;
   private buildNumber?: string;
   private originalHandler: ((error: Error, isFatal?: boolean) => void) | null =
@@ -34,14 +39,18 @@ export class BloopRNClient {
   private originalPromiseRejectionHandler: ((id: string, error: Error) => void) | null = null;
 
   constructor(config: BloopRNConfig) {
-    const source =
+    this.source =
       config.source || (Platform.OS === "ios" ? "ios" : "android");
     this.appVersion = config.appVersion;
     this.buildNumber = config.buildNumber;
 
-    this.client = new BaseBloopClient({
-      ...config,
-      source,
+    this.client = new BloopClient({
+      endpoint: config.endpoint,
+      projectKey: config.projectKey,
+      environment: config.environment,
+      release: config.release,
+      flushInterval: config.flushInterval,
+      maxBufferSize: config.maxBufferSize,
     });
   }
 
@@ -56,7 +65,12 @@ export class BloopRNClient {
     if (this.buildNumber) metadata.buildNumber = this.buildNumber;
 
     this.client.capture({
-      ...event,
+      errorType: event.errorType,
+      message: event.message,
+      source: this.source,
+      stack: event.stack,
+      routeOrProcedure: event.routeOrProcedure,
+      screen: event.screen,
       metadata,
     });
   }
@@ -132,30 +146,25 @@ export class BloopRNClient {
     };
   }
 
-  /** Start a new LLM trace. Delegates to the underlying BloopClient. */
-  startTrace(opts: TraceOptions): Trace {
-    return this.client.startTrace(opts);
-  }
-
-  /**
-   * Convenience: trace a single LLM generation call.
-   * Creates a trace with a single generation span, executes the callback,
-   * and ends both span and trace automatically.
-   */
-  async traceGeneration<T>(
-    opts: TraceGenerationOptions,
-    fn: (span: Span) => Promise<T>
-  ): Promise<T> {
-    return this.client.traceGeneration(opts, fn);
+  /** Start a new LLM trace. */
+  startTrace(opts: {
+    name?: string;
+    traceId?: string;
+    sessionId?: string;
+    userId?: string;
+    promptName?: string;
+    promptVersion?: string;
+  } = {}): Trace {
+    return this.client.trace(opts);
   }
 
   /** Flush buffered events immediately. */
-  async flush(): Promise<void> {
-    return this.client.flush();
+  flush(): void {
+    this.client.flush();
   }
 
   /** Shutdown the client, flushing remaining events. */
-  async shutdown(): Promise<void> {
+  shutdown(): void {
     this.uninstallGlobalHandler();
     this.appStateSubscription?.remove();
     this.appStateSubscription = null;
@@ -166,7 +175,7 @@ export class BloopRNClient {
     } else {
       delete g.onunhandledrejection;
     }
-    return this.client.close();
+    this.client.close();
   }
 }
 
